@@ -40,7 +40,7 @@ fn partition(s: &str) -> (Vec<i32>, Vec<i32>) {
     let mut start = 0;
     for (i, c) in s.chars().enumerate() {
         if !c.is_numeric() {
-            if i - start > 1 {
+            if i - start >= 1 {
                 let x: i32 = *&s[start..i].parse().expect("parse error");
                 if to1 {
                     list1.push(x);

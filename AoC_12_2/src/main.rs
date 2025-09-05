@@ -21,7 +21,9 @@ fn part1(s: &str) -> i32 {
     let mut s = s;
     loop {
         let (report, i) = read_report(s, 0);
-        num_safe += is_safe(&report) as i32;
+        if !report.is_empty() {
+            num_safe += is_safe(&report) as i32;
+        }
         if i == 0 {break;}
         s = &s[i..];
     }
@@ -33,13 +35,15 @@ fn part2(s: &str) -> i32 {
     let mut s = s;
     loop {
         let (report, i) = read_report(s, 0);
-        if is_safe(&report) {
-            num_safe += 1;
-        } else {
-            for removal in every_removal(&report).iter() {
-                if is_safe(removal) {
-                    num_safe += 1;
-                    break;
+        if !report.is_empty() {
+            if is_safe(&report) {
+                num_safe += 1;
+            } else {
+                for removal in every_removal(&report).iter() {
+                    if is_safe(removal) {
+                        num_safe += 1;
+                        break;
+                    }
                 }
             }
         }

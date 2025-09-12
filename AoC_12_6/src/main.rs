@@ -120,6 +120,83 @@ impl Map {
         visited
     }
 
+    fn advance_check_loops(&mut self) -> Result<(bool, Option<(i32, i32)>), ()> {
+        use Direction::*;
+        let (x, y) = self.guard.loc;
+        let mut looping_obst: Option<(i32, i32)> = None;
+        match self.guard.dir {
+            Up => {
+                if !self.obstacles.contains(&(x-1, y)) {
+                    let mut modified = self.clone();
+                    modified.obstacles.push((x-1, y));
+                    if let Err(_) = modified.advance_all() {looping_obst = Some((x-1, y));}
+                    self.guard.loc = (x-1, y);
+                } else {
+                    self.guard.dir = Right;
+                }
+                if self.history.contains(&self.guard_status()) {return Err(());}
+                self.history.push(self.guard_status());
+            },
+            Right => {
+                if !self.obstacles.contains(&(x, y+1)) {
+                    let mut modified = self.clone();
+                    modified.obstacles.push((x, y+1));
+                    if let Err(_) = modified.advance_all() {looping_obst = Some((x, y+1));}
+                    self.guard.loc = (x, y+1);
+                } else {
+                    self.guard.dir = Down;
+                }
+                if self.history.contains(&self.guard_status()) {return Err(());}
+                self.history.push(self.guard_status());
+            },
+            Down => {
+                if !self.obstacles.contains(&(x+1, y)) {
+                    let mut modified = self.clone();
+                    modified.obstacles.push((x+1, y));
+                    if let Err(_) = modified.advance_all() {looping_obst = Some((x+1, y));}
+                    self.guard.loc = (x+1, y);
+                } else {
+                    self.guard.dir = Left;
+                }
+                if self.history.contains(&self.guard_status()) {return Err(());}
+                self.history.push(self.guard_status());
+            },
+            Left => {
+                if !self.obstacles.contains(&(x, y-1)) {
+                    let mut modified = self.clone();
+                    modified.obstacles.push((x, y-1));
+                    if let Err(_) = modified.advance_all() {looping_obst = Some((x, y-1));}
+                    self.guard.loc = (x, y-1);
+                } else {
+                    self.guard.dir = Up;
+                }
+                if self.history.contains(&self.guard_status()) {return Err(());}
+                self.history.push(self.guard_status());
+            },
+        }
+        // println!("Advanced to {:?}", self.guard.loc);
+        
+        if self.guard.loc.0 >= self.width || self.guard.loc.0 < 0 || self.guard.loc.1 >= self.height || self.guard.loc.1 < 0 {
+            self.history.pop();
+            return Ok((true, looping_obst));
+        }
+        Ok((false, looping_obst))
+    }
+
+    fn advance_all_check_loops(&mut self) -> Vec<(i32, i32)> {
+        let mut loop_vec: Vec<(i32, i32)> = vec![];
+        loop {
+            match self.advance_check_loops() {
+                Ok((false, Some(looping_obst))) => {loop_vec.push(looping_obst);},
+                Ok((false, None)) => {},
+                Ok((true, Some(looping_obst))) => {panic!("looping obst at end");},
+                Ok((true, None)) => {break;},
+                Err(_) => {panic!("loop found in main");}
+            }
+        }
+        loop_vec
+    }
+
     fn looping_obstacles(&self) -> Vec<(i32, i32)> {
         let mut obsts: Vec<(i32, i32)> = Vec::new();
         for x in 0..self.height {
@@ -343,8 +420,8 @@ fn part1(s: &str) -> usize {
 }
 
 fn part2(s: &str) -> usize {                    // Very ineffecient as is. Took about an hour with AoC input.
-    let m = Map::from_str(s);
-    m.looping_obstacles().len()
+    let mut m = Map::from_str(s);
+    m.advance_all_check_loops().len()
 }
 
 #[cfg(test)]
